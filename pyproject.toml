@@ -1,0 +1,18 @@
+[project]
+name = "fast-api-hello-world"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.13.2",
+    "fastapi[standard]>=0.114.2",
+    "psycopg2-binary>=2.9.9",
+    "sqlalchemy>=2.0.34",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pre-commit>=3.8.0",
+    "ruff>=0.6.5",
+]
