@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Query, status, Depends
 from sqlalchemy.orm import Session
 from sqlmodel import select
@@ -18,12 +20,14 @@ from models import (
     TeamPublicWithHeroes,
 )
 
-app = FastAPI()
 
-
-@app.on_event("startup")
-def on_startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     create_db_and_tables()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.post("/heroes/", response_model=HeroPublic)
