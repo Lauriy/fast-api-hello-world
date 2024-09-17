@@ -1,26 +1,82 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
-
-from database import Base
+from sqlmodel import SQLModel, Field, create_engine, Session, Relationship
 
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    is_active = Column(Boolean, default=True)
-
-    items = relationship("Item", back_populates="owner")
+class TeamBase(SQLModel):
+    name: str = Field(index=True)
+    headquarters: str
 
 
-class Item(Base):
-    __tablename__ = "items"
+class Team(TeamBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
 
-    id = Column(Integer, primary_key=True)
-    title = Column(String, index=True)
-    description = Column(String, index=True)
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    heroes: list["Hero"] = Relationship(back_populates="team")
 
-    owner = relationship("User", back_populates="items")
+
+class TeamCreate(TeamBase):
+    pass
+
+
+class TeamPublic(TeamBase):
+    id: int
+
+
+class HeroBase(SQLModel):
+    name: str = Field(index=True)
+    secret_name: str
+    age: int | None = Field(default=None, index=True)
+    team_id: int | None = Field(default=None, foreign_key="team.id")
+
+
+class HeroPublic(HeroBase):
+    id: int
+
+
+class TeamPublicWithHeroes(TeamPublic):
+    heroes: list[HeroPublic] = []
+
+
+class TeamUpdate(SQLModel):
+    name: str | None = None
+    headquarters: str | None = None
+
+
+class Hero(HeroBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    hashed_password: str = Field()
+    team: Team | None = Relationship(back_populates="heroes")
+
+
+class HeroCreate(HeroBase):
+    password: str
+
+
+class HeroPublicWithTeam(HeroPublic):
+    team: TeamPublic | None = None
+
+
+class HeroUpdate(SQLModel):
+    name: str | None = None
+    secret_name: str | None = None
+    age: int | None = None
+    password: str | None = None
+    team_id: int | None = None
+
+
+def hash_password(password: str) -> str:
+    # Use something like passlib here
+    return f"not really hashed {password} hehehe"
+
+
+DATABASE_URL = "postgresql://postgres:postgres@localhost/postgres"
+
+connect_args = {"check_same_thread": False}
+engine = create_engine(DATABASE_URL, echo=True, connect_args=connect_args)
+
+
+def create_db_and_tables():
+    SQLModel.metadata.create_all(engine)
+
+
+def get_session():
+    with Session(engine) as session:
+        yield session
